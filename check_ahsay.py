@@ -110,11 +110,15 @@ def main():
     content = json.loads(response.text)
     data = content.get('Data')
     output = ''
-    for i in data:
-        job_name = i.get('BackupSetName')
-        backup_status = i.get('BackupJobStatus')
-        set_status(backup_status)
-        output += 'Backup Job "{}" returned status {}\n'.format(job_name, backup_status)
+    if data is not None:
+        for i in data:
+            job_name = i.get('BackupSetName')
+            backup_status = i.get('BackupJobStatus')
+            set_status(backup_status)
+            output += 'Backup Job "{}" returned status {}\n'.format(job_name, backup_status)
+    else:
+        print("CRITICAL: Es besteht keine Verbindung zum Backupserver")
+        exit(3)
 
     output = '{}\n{}'.format(get_status(), output)
     print(output)
