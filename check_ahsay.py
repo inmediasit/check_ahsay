@@ -117,7 +117,7 @@ def main():
             set_status(backup_status)
             output += 'Backup Job "{}" returned status {}\n'.format(job_name, backup_status)
     else:
-        print("CRITICAL: Es besteht keine Verbindung zum Backupserver")
+        print("CRITICAL: There is no connection to the backup server")
         exit(3)
 
     output = '{}\n{}'.format(get_status(), output)
