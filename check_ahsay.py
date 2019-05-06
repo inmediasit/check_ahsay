@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 # check_ahsay
 # Copyright (C) 2018 inmedis.it GmbH
 #
@@ -55,7 +54,6 @@ def set_status(status):
     else:
         set_exit_code(3)
 
-
 def main():
     # parse variables from commandline
     parser = argparse.ArgumentParser(description='Nagios check for Ahsay backup states')
@@ -106,25 +104,31 @@ def main():
         'LoginName': args.login_name,
         'BackupDate': date_formatted
     }
-    response = requests.post('http://' + args.hostname + '/obs/api/json/ListBackupJobStatus.do', data=payload)
-    content = json.loads(response.text)
-    data = content.get('Data')
-    output = ''
-    if data:
-        # backups sind vorhanden
-        for i in data:
-            job_name = i.get('BackupSetName')
-            backup_status = i.get('BackupJobStatus')
-            set_status(backup_status)
-            output += 'Backup Job "{}" returned status {}\n'.format(job_name, backup_status)
-    else:
-        # es sind keine Backups vorhanden
-        set_status(content.get('Status'))
-        output += content.get('Message')
 
-    output = '{}\n{}'.format(get_status(), output)
-    print(output)
-    exit(exit_code)
+    try:
+        response = requests.post('http://' + args.hostname + '/obs/api/json/ListBackupJobStatus.do', data=payload)
+    except requests.ConnectionError:
+        print("Could not connect to Ahsay API")
+        exit(3)
+    else:
+        content = json.loads(response.text)
+        data = content.get('Data')
+        output = ''
+        if data:
+            # backups are available
+            for i in data:
+                job_name = i.get('BackupSetName')
+                backup_status = i.get('BackupJobStatus')
+                set_status(backup_status)
+                output += 'Backup Job "{}" returned status {}\n'.format(job_name, backup_status)
+        else:
+            # there are no backups available
+            set_status(content.get('Status'))
+            output += content.get('Message')
+
+        output = '{}\n{}'.format(get_status(), output)
+        print(output)
+        exit(exit_code)
 
 if __name__ == '__main__':
     main()
