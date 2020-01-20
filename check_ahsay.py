@@ -122,19 +122,21 @@ def main():
         output = ''
         if data:
             # order backup jobs by date
-            data.sort(key=lambda x: parse_date(x['StartTime']))
+            data.sort(key=lambda x: parse_date(x['StartTime']), reverse=True)
 
             backup_jobs = dict()
             other_jobs = dict()
             # backups are available
-            for i in data:
-                job_name = i.get('BackupSetName')
-                # check for existing jobs
-                other_job = backup_jobs.get(job_name, None)
-                if other_job:
-                    other_jobs[job_name] = other_job
+            for item in data:
+                job_name = item.get('BackupSetName')
+                # check for existing jobs, since they have precedence
+                existing_job = backup_jobs.get(job_name)
+                if existing_job:
+                    # if a job with the same name exists, make the current one a superseded job
+                    other_jobs[job_name] = item
                 else:
-                    backup_jobs[job_name] = i
+                    # otherwise this is a job we actually care about
+                    backup_jobs[job_name] = item
 
             # run check logic on jobs we care about
             for i, job in enumerate(backup_jobs.values()):
@@ -148,8 +150,8 @@ def main():
                 output += '\n--- Superseded jobs at {date} ------\n'.format(
                     date=date_formatted)
                 for otherjob in other_jobs.values():
-                    output += '* Job "{name}" at {date} –– Status: {status}\n'.format(
-                        name=otherjob.get('BackupSetName'), date=otherjob.get('StartTime'), status=other_job.get('BackupJobStatus'))
+                    output += '* Job "{name}" at {date} –– Status: {status}\n'.format(name=otherjob.get(
+                        'BackupSetName'), date=otherjob.get('StartTime'), status=otherjob.get('BackupJobStatus'))
                 output += 40*'-' + '\n'
         else:
             # there are no backups available
